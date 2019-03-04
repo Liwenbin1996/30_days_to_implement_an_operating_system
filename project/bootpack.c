@@ -6,7 +6,9 @@ void HariMain(void)
 	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
 	char s[40], mcursor[256], keybuf[32], mousebuf[128];
 	int mx, my, i;
+	unsigned int memtotal;
 	struct MOUSE_DEC mdec;
+	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	
 	init_gdtidt();		/*GDT(global (segment) descripter table) 全局段号记录表
 						  IDT(interrupt descripter table) 中断记录表 */
@@ -23,6 +25,12 @@ void HariMain(void)
 	io_out8(PIC1_IMR, 0xef);		/*允许PIC接受鼠标的中断请求*/
 	
 	init_keyboard();
+	enable_mouse(&mdec);
+	
+	memtotal = memtest(0x00400000, 0xbfffffff);
+	memman_init(memman);
+	memman_free(memman, 0x00001000, 0x0009e000);
+	memman_free(memman, 0x00400000, memtotal - 0x00400000);
 	
 	init_palette();		/*为了使用320*200的8位(0-255)颜色模式，需要对0-255的标号
 						  进行颜色设定，该函数只设定了16种颜色*/
@@ -33,10 +41,12 @@ void HariMain(void)
 	init_mouse_cursor8(mcursor, COL8_008484);
 	putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
 						/*在屏幕中央显示鼠标光标*/
-	sprintf(s, "(%d, %d)", mx, my);
+	sprintf(s, "(%3d, %3d)", mx, my);
 	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 	
-	enable_mouse(&mdec);
+	sprintf(s, "memory %dMB    free : %dMB",
+			memtotal / (1024 * 1024), memman_total(memman) / (1024 * 1024));
+	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
 	
 	for(;;)
 	{
