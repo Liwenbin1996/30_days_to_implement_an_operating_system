@@ -152,14 +152,15 @@ int memman_free_4k(struct MEMMAN *man, unsigned int addr, unsigned int size);
 /* sheet.c */
 #define MAX_SHEETS		256
 struct SHEET {
-	unsigned char *buf;
+	unsigned char *buf;			/* 图层画面内容 */
 	int bxsize, bysize, vx0, vy0, col_inv, height, flags;
+		/* 图层大小 在屏幕中显示的位置 透明色号 图层高度 是否被使用*/
 };
 struct SHTCTL {
-	unsigned char *vram;
-	int xsize, ysize, top;
-	struct SHEET *sheets[MAX_SHEETS];
-	struct SHEET sheets0[MAX_SHEETS];
+	unsigned char *vram;					/* 显存起始地址 */
+	int xsize, ysize, top;					/* 屏幕大小以及最上面图层的高度 */
+	struct SHEET *sheets[MAX_SHEETS];		/* 排序后的图层 */
+	struct SHEET sheets0[MAX_SHEETS];		/* 图层信息 */
 };
 struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram, int xsize, int ysize);
 struct SHEET *sheet_alloc(struct SHTCTL *ctl);

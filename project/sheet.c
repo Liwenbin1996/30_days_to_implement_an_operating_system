@@ -42,12 +42,14 @@ struct SHEET *sheet_alloc(struct SHTCTL *ctl)
 void sheet_setbuf(struct SHEET *sht, unsigned char *buf, int xsize, int ysize, int col_inv)
 {
 	sht->buf = buf;
-	sht->bxsize = xsize;
+	sht->bxsize = xsize;			/* 图层大小 */
 	sht->bysize = ysize;
-	sht->col_inv = col_inv;
+	sht->col_inv = col_inv;			/* 透明色号 */
 	return;
 }
 
+/* 重新绘制部分画面 */
+/*vx,vy: 在屏幕上的位置; bx,by: 在图层上的位置*/
 void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1)
 {
 	int h, bx, by, vx, vy, bx0, by0, bx1, by1;
@@ -57,11 +59,11 @@ void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1)
 	{
 		sht = ctl->sheets[h];
 		buf = sht->buf;
-		bx0 = vx0 - sht->vx0;
+		bx0 = vx0 - sht->vx0;		/* 屏幕上的位置对应到当前图层的位置 */
 		by0 = vy0 - sht->vy0;
 		bx1 = vx1 - sht->vx0;
 		by1 = vy1 - sht->vy0;
-		if(bx0 < 0) { bx0 = 0; }
+		if(bx0 < 0) { bx0 = 0; }		/* 只在当前层的范围内处理 */
 		if(by0 < 0) { by0 = 0; }
 		if(bx1 > sht->bxsize) { bx1 = sht->bxsize; }
 		if(by1 > sht->bysize) { by1 = sht->bysize; }
@@ -72,23 +74,26 @@ void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1)
 			{
 				vx = sht->vx0 + bx;
 				c = buf[sht->bxsize * by + bx];
-				if(c != sht->col_inv)
+				if(c != sht->col_inv)		/* 不是透明色 */
 					vram[vy * ctl->xsize + vx] = c;
 			}
 		}
 	}
 }
 
+/* 调整图层高度 */
 void sheet_updown(struct SHTCTL *ctl, struct SHEET *sht, int height)
 {
 	int h, old = sht->height;
 	
+	/* 如果指定的高度过高或过低，则需要修正 */
 	if(height > ctl->top + 1)
 		height = ctl->top + 1;
 	if(height < -1)
 		height = -1;
 	sht->height = height;
 	
+	/* 图层降低了 */
 	if(old > height)
 	{
 		if(height >= 0)
@@ -100,7 +105,7 @@ void sheet_updown(struct SHTCTL *ctl, struct SHEET *sht, int height)
 			}
 			ctl->sheets[height] = sht;
 		}
-		else
+		else		/* 隐藏 */
 		{
 			for(h = old; h < ctl->top; h++)
 			{
@@ -111,7 +116,7 @@ void sheet_updown(struct SHTCTL *ctl, struct SHEET *sht, int height)
 		}
 		sheet_refreshsub(ctl, sht->vx0, sht->vy0, sht->vx0 + sht->bxsize, sht->vy0 + sht->bysize);
 	}
-	else if(old < height)
+	else if(old < height)     /* 图层提高了 */
 	{
 		if(old >= 0)
 		{
@@ -137,6 +142,7 @@ void sheet_updown(struct SHTCTL *ctl, struct SHEET *sht, int height)
 	return;
 }
 
+/* 重新绘制画面，支持部分更新 */
 void sheet_refresh(struct SHTCTL *ctl, struct SHEET *sht, int bx0, int by0, int bx1, int by1)
 {
 	if(sht->height >= 0)
@@ -144,6 +150,7 @@ void sheet_refresh(struct SHTCTL *ctl, struct SHEET *sht, int bx0, int by0, int 
 	return;
 }
 
+/* 图层平移 */
 void sheet_slide(struct SHTCTL *ctl, struct SHEET *sht, int vx0, int vy0)
 {
 	int old_vx0 = sht->vx0, old_vy0 = sht->vy0;
