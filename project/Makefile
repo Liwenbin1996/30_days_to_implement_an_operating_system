@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj \
+OBJS_BOOTPACK = bootpack.obj naskfunc.obj hankaku.obj graphic.obj sheet.obj \
 		dsctbl.obj int.obj fifo.obj keyboard.obj mouse.obj memory.obj
 		
 TOOLPATH = ../z_tools/
